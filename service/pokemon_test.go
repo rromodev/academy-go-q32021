@@ -1,20 +1,19 @@
-package csvservice_test
+package service
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/rromodev/academy-go-q32021/csvservice"
-	"github.com/rromodev/academy-go-q32021/models"
+	"github.com/rromodev/academy-go-q32021/model"
 )
 
 func TestGetPokemonByIdTableDriven(t *testing.T) {
-	bulbasaur := models.Pokemon{ID: 1, Name: "bulbasaur"}
+	bulbasaur := model.Pokemon{ID: 1, Name: "bulbasaur"}
 
 	type test struct {
 		name    string
 		id      int
-		pokemon models.Pokemon
+		pokemon model.Pokemon
 		err     error // bool
 		path    string
 	}
@@ -38,8 +37,8 @@ func TestGetPokemonByIdTableDriven(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service := csvservice.NewPokemonService(tt.path)
-			ans, err := service.GetPokemonById(tt.id)
+			ps := NewPokemonService(tt.path)
+			ans, err := ps.GetPokemonById(tt.id)
 
 			if err != nil {
 				t.Error(err)

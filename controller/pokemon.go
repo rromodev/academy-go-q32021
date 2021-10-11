@@ -6,18 +6,18 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rromodev/academy-go-q32021/models"
+	"github.com/rromodev/academy-go-q32021/model"
 )
 
-type CSVGetter interface {
-	GetPokemonById(id int) (*models.Pokemon, error)
+type PokemonServiceGetter interface {
+	GetPokemonById(id int) (*model.Pokemon, error)
 }
 
 type PokemonController struct {
-	pokemonService CSVGetter
+	pokemonService PokemonServiceGetter
 }
 
-func NewPokemonController(pokemonService CSVGetter) PokemonController {
+func NewPokemonController(pokemonService PokemonServiceGetter) PokemonController {
 	return PokemonController{pokemonService}
 }
 
