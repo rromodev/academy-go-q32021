@@ -22,14 +22,9 @@ func main() {
 	userService := service.NewUserService(csvData, externalData)
 	userController := controller.NewUserController(userService)
 
-	workerService := service.NewWorkerService()
+	workerService := service.NewWorkerService(csvData)
 	workerController := controller.NewWorkerController(workerService)
 
-	ginServer := router.NewRouter(
-		pokemonController, 
-		userController,
-		workerController
-	).SetRoutes()
-
+	ginServer := router.NewRouter(pokemonController, userController, workerController).SetRoutes()
 	ginServer.Run(URL)
 }

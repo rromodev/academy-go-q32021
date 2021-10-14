@@ -18,10 +18,11 @@ func NewWorkerController(workerService WorkerServiceReader) WorkerController {
 	return WorkerController{workerService}
 }
 
-func Reader(c *gin.Context) {
-	typeid := c.Param("type")
-	items := c.Param("items")
-	itemsPerWorker := c.Param("items_per_worker")
+func (wc WorkerController) Reader(c *gin.Context) {
+	typeid := c.DefaultQuery("type", "odd")
+	items := 5          // c.DefaultQuery("items", "5")
+	itemsPerWorker := 5 // c.DefaultQuery("items_per_worker", "5")
 
+	wc.workerService.Reader(typeid, items, itemsPerWorker)
 	fmt.Println(typeid, items, itemsPerWorker)
 }

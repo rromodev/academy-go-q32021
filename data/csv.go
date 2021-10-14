@@ -3,8 +3,11 @@ package data
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
+	"time"
 )
 
 type CSVData struct {
@@ -59,4 +62,14 @@ func (cs CSVData) WriteRecord(record []string) (string, error) {
 		return "", errors.New("error writing record to file")
 	}
 	return "ok", nil
+}
+
+func (cs CSVData) WorkerReader(ID int, jobs <-chan int, results chan<- []string) {
+	for job := range jobs {
+		fmt.Println("Worker ", ID, " is working on job ", job)
+		duration := time.Duration(rand.Intn(1e3)) * time.Millisecond
+		time.Sleep(duration)
+		fmt.Println("Worker ", ID, " completed work on job ", job, " within ", duration)
+		results <- []string{"test"}
+	}
 }
