@@ -1,9 +1,12 @@
 package service
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type CSVWorkerSetter interface {
-	WorkerReader(ID int, jobs <-chan int, results chan<- []string)
+	WorkerReader(csvLine chan<- []string, items int, typeNumber string)
 }
 
 type WorkerService struct {
@@ -14,26 +17,47 @@ func NewWorkerService(data CSVWorkerSetter) WorkerService {
 	return WorkerService{data: data}
 }
 
-const workerPoolSize = 4
+//const workerPoolSize = 50
 
-func (ws WorkerService) Reader(typeId string, items int, items_per_workers int) (string, error) {
-	jobs := make(chan int, 10)
-	results := make(chan []string, 10)
-	fmt.Println("worker func called")
-	for x := 1; x <= 3; x++ {
-		go ws.data.WorkerReader(x, jobs, results)
+func (ws WorkerService) Reader(typeId string, items int, items_per_workers int, workerPoolSize int) (string, error) {
+	//jobs := make(chan []string, workerPoolSize)
+	csvLine := make(chan []string, workerPoolSize)
+	results := make(chan string)
+
+	lines := 0
+	someMapMutex := sync.RWMutex{}
+	m := make(map[int]int)
+
+	go ws.data.WorkerReader(csvLine, items, typeId)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(workerPoolSize)
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for i := 1; i <= workerPoolSize; i++ {
+		go func(index int) {
+			defer wg.Done()
+
+			for job := range csvLine {
+
+				someMapMutex.Lock()
+				if m[index]+1 <= items_per_workers {
+					lines++
+					m[index]++
+					results <- fmt.Sprintf("%d Worker %d starting: %s\n", lines, index, job[0])
+				}
+				someMapMutex.Unlock()
+			}
+
+		}(i)
 	}
 
-	// Give them jobs
-	for j := 1; j <= 6; j++ {
-		jobs <- j
-	}
-	close(jobs)
-
-	// Wait for the results
-	for r := 1; r <= 6; r++ {
-		fmt.Println("Result received from worker: ", <-results)
+	for r := range results {
+		fmt.Println("result", r)
 	}
 
-	return "", nil
+	return fmt.Sprintf("test, lines %d map %v", lines, m), nil
 }

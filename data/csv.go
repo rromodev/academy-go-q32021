@@ -1,14 +1,18 @@
 package data
 
 import (
+	"bufio"
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"math/rand"
+	"log"
 	"os"
 	"strconv"
-	"time"
+	"strings"
 )
+
+const ODD = "odd"
+const EVEN = "even"
 
 type CSVData struct {
 	filePath string
@@ -20,9 +24,9 @@ func NewCSVData(filePath string) CSVData {
 
 func (cs CSVData) GetRecordById(id int, rowType string) ([]string, error) {
 
-	file, err := os.Open(cs.filePath)
+	file, err := cs.getFile()
 	if err != nil {
-		return nil, errors.New("csv not found")
+		return nil, err
 	}
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
@@ -64,12 +68,50 @@ func (cs CSVData) WriteRecord(record []string) (string, error) {
 	return "ok", nil
 }
 
-func (cs CSVData) WorkerReader(ID int, jobs <-chan int, results chan<- []string) {
-	for job := range jobs {
-		fmt.Println("Worker ", ID, " is working on job ", job)
-		duration := time.Duration(rand.Intn(1e3)) * time.Millisecond
-		time.Sleep(duration)
-		fmt.Println("Worker ", ID, " completed work on job ", job, " within ", duration)
-		results <- []string{"test"}
+func (cs CSVData) WorkerReader(csvLine chan<- []string, items int, typeNumber string) {
+	file, err := cs.getFile()
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	defer file.Close()
+	counter := 0
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		lineData := strings.Split(line, ",")
+		id, _ := strconv.Atoi(lineData[0])
+
+		if typeNumber == EVEN && id%2 == 0 {
+			counter++
+			if counter <= items {
+				csvLine <- lineData
+			} else {
+				fmt.Println("*** items limit ***")
+				break
+			}
+		} else if typeNumber == ODD && id%2 == 1 {
+			counter++
+			if counter <= items {
+				csvLine <- lineData
+			} else {
+				fmt.Println("*** items limit ***")
+				break
+			}
+		}
+
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatalf("scan file error: %v", err)
+	}
+
+	close(csvLine)
+}
+
+func (cs CSVData) getFile() (*os.File, error) {
+	file, err := os.Open(cs.filePath)
+	if err != nil {
+		return nil, errors.New("csv not found")
+	}
+	return file, nil
 }

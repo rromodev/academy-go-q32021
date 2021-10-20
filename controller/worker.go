@@ -2,12 +2,14 @@ package controller
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type WorkerServiceReader interface {
-	Reader(typeId string, items int, items_per_workers int) (string, error)
+	Reader(typeId string, items int, items_per_workers int, workers int) (string, error)
 }
 
 type WorkerController struct {
@@ -20,9 +22,12 @@ func NewWorkerController(workerService WorkerServiceReader) WorkerController {
 
 func (wc WorkerController) Reader(c *gin.Context) {
 	typeid := c.DefaultQuery("type", "odd")
-	items := 5          // c.DefaultQuery("items", "5")
-	itemsPerWorker := 5 // c.DefaultQuery("items_per_worker", "5")
+	items, _ := strconv.Atoi(c.DefaultQuery("items", "5"))
+	itemsPerWorker, _ := strconv.Atoi(c.DefaultQuery("items_per_workers", "5"))
+	workers, _ := strconv.Atoi(c.DefaultQuery("workers", "10"))
 
-	wc.workerService.Reader(typeid, items, itemsPerWorker)
-	fmt.Println(typeid, items, itemsPerWorker)
+	ss, _ := wc.workerService.Reader(typeid, items, itemsPerWorker, workers)
+	fmt.Println("controller: ", typeid, items, itemsPerWorker, ss)
+
+	c.JSON(http.StatusOK, ss)
 }
